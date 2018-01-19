@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Copyright 2018, Z Lab Corporation. All rights reserved.
+# Copyright 2018, Kubernetes scripts contributors
+#
+# For the full copyright and license information, please view the LICENSE
+# file that was distributed with this source code.
+
+set -e
+set -o pipefail
+
+apiversion2resources() {
+  local apiversion="$1"
+  local url=""
+
+  if [[ "$apiversion" == "v1" ]]; then
+    url="/api/v1"
+  else
+    url="/apis/$apiversion"
+  fi
+
+  kubectl get --raw "$url" | jq -r ".resources[] | if (.name | contains(\"/\")) then empty else .kind end" | grep -v "/" | sort | sed -e "s#^#$apiversion.#"
+}
+
+export -f apiversion2resources
+
+cat | xargs -I% -P3 -n1 bash -c "apiversion2resources %" | sort
+# vim: ai ts=2 sw=2 et sts=2 ft=sh
